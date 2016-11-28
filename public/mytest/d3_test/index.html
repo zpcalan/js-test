@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+    .div{
+         box-shadow: 0 0 15px 5px #f3d42e; 
+    }
+    .axis path,
+    .axis line{
+        fill: none;
+        stroke: black;
+        shape-rendering: crispEdges;
+    }
+
+    .axis text {
+        font-family: sans-serif;
+        font-size: 11px;
+    }
+    .chord path {
+        /*fill-opacity: 0.67;*/
+        stroke: #000;
+        stroke-width: 0.5px;
+    }
+</style>
+<div class="div">
+    <table>
+        <tr>
+        </tr>
+        <tr>
+            <button id='delete'>删除多余元素</button>
+        </tr>
+    </table>
+</div>
+
+<div  class="div" style="background-color: white;height: 100px;width:100px">
+    <p id="show"></p>
+    <p id="color"></p>
+</div>
+
+<div class="gardenDiv div"></div>
+
+<div class="my div">
+    <p>比例尺柱状图</p>
+</div>
+
+<div class="div axis">
+    <p>带比例尺坐标轴</p>
+</div>
+
+<div class="div complete">
+    <p>完整柱状图</p>
+</div>
+
+<div class="div ease">
+    <p>动态柱状图</p>
+</div>
+
+<div class="div pie">
+    <p>饼状图</p>
+</div>
+
+<div class="div force">
+    <p>力导向图</p>
+</div>
+
+<div class="div chord">
+    <p>弦图</p>
+</div>
+
+<div class="div cluster">
+    <p>集群图</p>
+</div>
+
+<script src="../../../lib/jQuery.min.js"></script>
+<script src="../../../lib/d3.js"></script>
+<script>
+// 补间动画
+(function () {
+    var show=d3.select("#show")
+    var color=d3.select("#color")
+    var inter1=d3.interpolateRound(0,1000)
+    var inter2=d3.interpolateRgb('#f00','#0ff')
+    show.transition().duration(2000).tween('first',function () {
+        return function (t) {
+            show.style('color',inter2(t));
+            show.text(inter1(t));
+            color.text(inter2(t))  
+        }
+    })
+})();
+// 数据排序展示树状图
+(function () {
+    var data=[3,1,53,56,67,8]
+    var svg=d3.select('div.gardenDiv').append('svg').attr('width' , '417px' ).style('background-color','grey')
+    svg.selectAll('rect').data(data).enter().append('rect').attr('height',function (d) {
+        return d;
+    }).attr('width','10px').style('stroke','red').attr('x',function (d,i) {
+        return i*20;
+    }).sort(function (a,b) {
+        return a-b;
+    }).order().attr('x',function (d,i) {
+        return i*20;
+    }).style('transform',function (d,i) {
+        return "translate(200px,0)";
+    })
+})();
+// 绑定数据后更新数据 删除多余的
+(function () {
+    d3.select('tr').selectAll('td').data([2,3,4,5,6,7,8]).enter().append('td').text(function (d) {
+        return d;
+    })
+    var td1=d3.selectAll('td').data([2,4,6],function (d) {
+        return d;
+    })
+    $('#delete').on('click',function () {
+        td1.exit().remove();
+    })
+})();
+// 颜色转换动画
+(function () {
+    d3.selectAll('td').on('mouseover',function (d,i) {
+        this.style.backgroundColor='black'
+    }).on('mouseout',function (d,i) {
+        this.style.backgroundColor='red'
+    }) 
+})();
+// 比例尺
+(function () {
+    var data=[0.3,0.1,5.3,5.6,6.7,0.8]
+    var linear=d3.scaleLinear().domain([d3.min(data),d3.max(data)]).range([1,67])
+    var svg=d3.select('div.my').append('svg').attr('width' , '417px' ).style('background-color','grey')
+    svg.selectAll('rect').data(data).enter().append('rect').attr('height',function (d) {
+        return linear(d);
+    }).attr('width','20px').style('stroke','red').attr('x',function (d,i) {
+        return i*20;
+    }).sort(function (a,b) {
+        return a-b;
+    }).order().attr('x',function (d,i) {
+        return i*20;
+    }).style('transform',function (d,i) {
+        return "translate(200px,0)";
+    })
+})();
+// 带比例尺坐标轴
+(function () {
+    var data=[0.3,0.1,5.3,5.6,6.7,0.8]
+    var linear=d3.scaleLinear().domain([d3.min(data),d3.max(data)]).range([1,67])
+    var svg=d3.select('div.axis').append('svg').attr('width' , '417px' ).style('background-color','grey')
+    var axis=d3.axisLeft()
+            .scale(linear)
+            .ticks(7);
+    svg.append('g').call(axis).attr('transform','translate(200,0)');
+    svg.selectAll('rect').data(data).enter().append('rect').attr('height',function (d) {
+        return linear(d);
+    }).attr('width','20px').style('stroke','red').attr('x',function (d,i) {
+        return i*20;
+    }).sort(function (a,b) {
+        return a-b;
+    }).order().attr('x',function (d,i) {
+        return i*20;
+    }).style('transform',function (d,i) {
+        return "translate(200px,0)";
+    })
+})();
+// 完整柱状图
+(function () {
+    var arr=[10,20,30,38,33,24,12,5];
+    var height=width=400;
+    var padding = {left:30, right:30, top:20, bottom:20};
+    var svg=d3.select('div.complete').append('svg').attr('height',height).attr('width',width)
+
+    var linear=d3.scaleLinear().
+               domain([0,38]).
+               range([height-padding.top-padding.bottom,0]);
+    var ordinal=d3.scaleBand()
+                  .domain(d3.range(8))
+                  .range([0,width-padding.left-padding.right])
+                  .paddingInner([0.1])
+                  .paddingOuter([0.3])//这两个间距无论设多少都没事 0~1之间
+
+    svg.selectAll('rect').data(arr)
+        .enter()
+        .append('rect')
+        .attr('height',function (d,i) {
+            return height-padding.top-padding.bottom-linear(d);
+        })
+        .attr('width',ordinal.bandwidth())
+        .attr('x',function (d,i) {
+            return ordinal(i)+padding.left;//这里直接用ordinal返回确切的位置
+        })
+        .attr('y',function (d,i) {
+            return linear(d)+padding.top;
+        })
+        .attr('fill','steelblue');
+
+    var axisy=d3.axisLeft()
+                .ticks(10)
+                .scale(linear);
+    var axisx=d3.axisBottom()
+                .ticks(8)
+                .scale(ordinal)
+    svg.append('g')
+       .call(axisy).attr('transform','translate('+padding.left+','+padding.top+')');
+    svg.append('g')
+       .call(axisx).attr('transform','translate('+padding.left+','+(height-padding.bottom)+')');
+})();
+// 柱状图带动画
+(function () {
+    var arr=[10,20,30,38,33,24,12,5];
+    var height=width=400;
+    var padding = {left:30, right:30, top:20, bottom:20};
+    var svg=d3.select('div.ease').append('svg').attr('height',height).attr('width',width)
+
+    var linear=d3.scaleLinear().
+               domain([0,38]).
+               range([height-padding.top-padding.bottom,0]);
+    var ordinal=d3.scaleBand()
+                  .domain(d3.range(8))
+                  .range([0,width-padding.left-padding.right])
+                  .paddingInner([0.1])
+                  .paddingOuter([0.3]);
+    // 下面是矩形的动画 很重要的一点是需要将y和height同时变化 才能出现好的效果
+    svg.selectAll('rect').data(arr)
+        .enter()
+        .append('rect')
+        .attr('width',ordinal.bandwidth())
+        .attr('x',function (d,i) {
+            return ordinal(i)+padding.left;
+        })
+        .attr('y',linear(0)+padding.top)
+        .attr('fill','steelblue')
+        .attr('height',0)
+        .transition().ease(d3.easeBounce).duration(2000)
+        .attr('y',function (d,i) {
+            return linear(d)+padding.top;
+        })
+        .attr('height',function (d,i) {
+            return height-padding.top-padding.bottom-linear(d);
+        })
+        .transition().ease(d3.easeLinear).duration(2000)
+        .attr('fill','yellow')
+
+    var axisy=d3.axisLeft()
+                .ticks(10)
+                .scale(linear);
+    var axisx=d3.axisBottom()
+                .ticks(8)
+                .scale(ordinal)
+    svg.append('g')
+       .call(axisy).attr('transform','translate('+padding.left+','+padding.top+')');
+    svg.append('g')
+       .call(axisx).attr('transform','translate('+padding.left+','+(height-padding.bottom)+')');
+})();
+// 饼图
+(function () {
+    var dataset = [ 30 , 10 , 43 , 55 , 13 ];
+    var height=width=400;
+    var pie = d3.pie()(dataset);
+    var outerRadius = 150; //外半径
+    var innerRadius = 0; //内半径，为0则中间没有空白
+    var arc = d3.arc()  //弧生成器
+        .innerRadius(innerRadius)   //设置内半径
+        .outerRadius(outerRadius);  //设置外半径
+    var color = d3.schemeCategory10;
+    var svg=d3.select("div.pie").append('svg').attr('height',height).attr('width',width)
+
+    var arcs = svg.selectAll("g")
+        .data(pie)
+        .enter()
+        .append("g")
+        .attr("transform","translate("+ (width/2) +","+ (width/2) +")");
+
+    arcs.append("path")
+        .attr("fill",function(d,i){
+            return color[i];
+        })
+        .attr("d",function(d){
+            return arc(d);   //调用弧生成器，得到路径值
+        });
+    
+    arcs.append("text")
+        .attr("transform",function(d){
+            return "translate(" + arc.centroid(d) + ")";
+        })
+        .attr("text-anchor","middle")
+        .text(function(d){
+            return d.data;
+        });
+    
+})();
+// 力导向图
+(function () {
+    var width=height=400
+    var nodes = [ { name: 0 }, { name: 1 },
+              { name: 2 }, { name: 3 },
+              { name: 4 }, { name: 5 },
+              { name: 6 } ];
+ 
+    var edges = [ { source : 0 , target: 1 } , { source : 0 , target: 2 } ,
+               { source : 0 , target: 3 } , { source : 1 , target: 4 } ,
+               { source : 1 , target: 5 } , { source : 1 , target: 6 } ]
+    var simulation  = d3.forceSimulation()
+                .force("link", d3.forceLink().id(function(d) { return d.name; }).distance(90))
+                .force("charge", d3.forceManyBody())
+                // .force("center", d3.forceCenter(width / 2, height / 2));
+    var color=d3.schemeCategory10;
+    var svg=d3.select('div.force').append('svg').attr("width",width).attr("height",height).append('g')
+        .attr("transform", "translate(" + width/2 + "," + height/2 + ")");;
+    simulation.nodes(nodes).on("tick", ticked);
+    simulation.force("link").links(edges);
+    // console.log(nodes);
+    // console.log(edges);
+    var svg_edges=svg.selectAll('line')
+                    .data(edges)
+                    .enter()
+                    .append('line')
+                    .style("stroke","#ccc")
+                    .style("stroke-width",7);
+    var svg_nodes=svg.selectAll('circle')
+                    .data(nodes)
+                    .enter()
+                    .append('circle')
+                    .attr("r", 20)
+                    .attr('fill',function (d,i) {
+                        return color[i]
+                    })
+                    .call(d3.drag()
+                      .on("start", dragstarted)
+                      .on("drag", dragged)
+                      .on("end", dragended));
+    function ticked() {
+    svg_edges
+        .attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+
+    svg_nodes
+        .attr("cx", function(d) { return d.x; })
+        .attr("cy", function(d) { return d.y; });
+  }
+    function dragstarted(d) {
+          if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+          d.fx = d.x;
+          d.fy = d.y;
+    }
+
+    function dragged(d) {
+      d.fx = d3.event.x;
+      d.fy = d3.event.y;
+    }
+
+    function dragended(d) {
+      if (!d3.event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+})();
+// 弦图
+(function () {
+    var width  = 600;
+    var height = 600;
+    var city_name = [ "北京" , "上海" , "广州" , "深圳" , "香港"  ];
+        
+    var population = [
+        [ 1000,  3045　 , 4567　, 1234 , 3714 ],
+        [ 3214,  2000　 , 2060　, 124  , 3234 ],
+        [ 8761,  6545　 , 3000　, 8045 , 647  ],
+        [ 3211,  1067  , 3214 , 4000  , 1006 ],
+        [ 2146,  1034　 , 6745 , 4764  , 5000 ]
+    ];
+    var innerRadius=width/2*0.7;
+    var outerRadius=1.1*innerRadius;
+
+    var chords=d3.chord().padAngle(0.1).sortGroups(d3.descending)(population);
+    var groups=chords.groups;
+    var colors=d3.schemeCategory20;
+    // console.log(groups)
+    // console.log(chords)
+
+    var svg=d3.select('div.chord').append('svg')//svg下的一个单位g 其中包括了节点g和弦g
+              .attr('width',width)
+              .attr('height',height)
+              .append('g')
+              .attr("transform", "translate(" + width/2 + "," + height/2 + ")");
+    var outer_arc =  d3.arc()//这是外部弧度
+                     .innerRadius(innerRadius)
+                     .outerRadius(outerRadius)
+    var inner_arc =  d3.ribbon()//带状图案 即弦
+                     .radius(innerRadius)
+
+    var svg_g=svg.append('g')
+    // 节点圆弧
+    var svg_groups=svg_g
+                      .selectAll('path')
+                      .data(groups)
+                      .enter()
+                      .append('path')
+                      .style("fill", function(d) { return colors[d.index]; })
+                      .style("stroke", function(d) { return colors[d.index]; })
+                      .attr("d", function (d) {
+                          return outer_arc(d)
+                      });
+    // 节点圆弧旁边的text
+    svg_g.selectAll('text')
+        .data(groups).enter().append('text')
+        .each( function(d,i) { 
+            d.angle = (d.startAngle + d.endAngle) / 2; 
+            d.name = city_name[i];
+        })
+        .attr("dy",".35em")
+        .attr("transform", function(d){
+            return "rotate(" + ( d.angle * 180 / Math.PI ) + ")" +
+            "translate(0,"+ -1.0*(outerRadius+10) +")" +
+            ( ( d.angle > Math.PI*3/4 && d.angle < Math.PI*5/4 ) ? "rotate(180)" : "");
+        })
+        .text(function(d){
+            return d.name;
+        });
+    // 内部弦
+    var svg_chords=svg.append('g').selectAll('path')
+                      .data(chords)
+                      .enter()
+                      .append('path')
+                      .style("fill", function(d) { return colors[d.source.index];})
+                      .style("opacity",0.67)
+                      .attr('d',inner_arc)
+                      .on('mouseover',function () {
+                          d3.select(this).style('fill','yellow')
+                      })
+                      .on('mouseout',function () {
+                          d3.select(this).style('fill',function(d) { return colors[d.source.index]; })
+                          .style("opacity",0.67)
+                      })
+})();
+// 集群图
+(function () {
+    var width = 500,height = 500;
+    var nodes,links;
+    var cluster = d3.cluster().size([width, height - 200]);
+    //树状图把上一句改成var cluster = d3.tree().size([width, height - 200]);即可
+    var svg=d3.select('div.cluster').append('svg')
+        .attr("width", width)
+        .attr("height", height)
+        .append('g')
+        .attr('transform',"translate(20,0)");
+    d3.json("../../../data/city.json", function(error, root) {
+        var hierarchy=cluster(d3.hierarchy(root))
+        nodes=hierarchy;
+        // console.log(links)
+        // console.log(nodes)
+        // 线
+        svg.selectAll('path')
+            .data(nodes.descendants().slice(1))
+            .enter()
+            .append('path')
+            .style('fill','#fff')
+            .style('stroke','grey')
+            .style('stroke-width',1)
+            .attr('d',function(d) {
+                return "M" + d.y + "," + d.x
+                 + "C" + (d.y + d.parent.y) / 2 + "," + d.x
+                 + " " + (d.y + d.parent.y) / 2 + "," + d.parent.x
+                 + " " + d.parent.y + "," + d.parent.x
+            })
+            // 点
+            svg.selectAll("circle")
+              .data(nodes.descendants())
+              .enter()
+              .append("circle")
+              .style('fill','#fff')
+              .style('stroke','steelblue')
+              .style('stroke-width',1)
+              .attr("r", 4.5)
+              .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+            // 文字
+            svg.selectAll('text')
+                .data(nodes.descendants())
+                .enter()
+                .append('text')
+                .style('color','#000')
+                .attr("transform",function (d) {
+                    return "translate("+(d.y+4.5)+","+d.x+")";
+                })
+                .text(function (d) {
+                    return d.data.name
+                })
+
+    })
+})()
+</script>
