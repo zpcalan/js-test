@@ -70,6 +70,9 @@
     <p>集群图</p>
 </div>
 
+<div class="div pack">
+    <p>打包图</p>
+</div>
 <script src="../../../lib/jQuery.min.js"></script>
 <script src="../../../lib/d3.js"></script>
 <script>
@@ -486,5 +489,41 @@
                 })
 
     })
-})()
+})();
+(function () {
+    var width = 500,height = 500;
+    var pack=d3.pack().size([width,height]);
+    var svg=d3.select('div.pack').append('svg').attr('width',width).attr('height',height);
+    var g=svg.append('g')
+    d3.json("../../../data/city2.json", function(error, root){
+        //API里说明:在这种有权重的图的情况下 必须先调用sum()之后再生成带参数的layout
+        pack=pack(d3.hierarchy(root,function (d) {
+            return d.kid;//可以自己设置子节点 因此可以适应任何复杂的数据结构
+        }).sum(function (d) {
+            return d.size;
+        }));
+        console.log(pack.descendants())
+        var g_circle_text=g.selectAll('g')
+            .data(pack.descendants())
+            .enter()
+            .append('g')
+            .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+        g_circle_text.append('circle')
+            .attr('r',function (d) {
+                return d.r;
+            })
+            .style('fill','rgb(31, 119, 180)')
+            .style('fill-opacity',0.25);//都透明 重叠后就会出现差异
+        g_circle_text.append('text')
+            .text(function (d) {
+                if(!d.children)//为叶子节点才输出文本
+                    return d.data.name;
+            })
+            .attr("font-size","10px")
+            .attr("dx",-12);
+
+    })
+})();
+
 </script>
