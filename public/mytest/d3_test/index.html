@@ -85,6 +85,10 @@
 <div class="div circledrag">
     
 </div>
+
+<div class="div partition">
+    <p>分区图</p>
+</div>
 <script src="/lib/jQuery.min.js"></script>
 <script src="/lib/d3.js"></script>
 <script>
@@ -502,6 +506,7 @@
 
     })
 })();
+// 打包图
 (function () {
     var width = 500,height = 500;
     var pack=d3.pack().size([width,height]);
@@ -753,5 +758,69 @@
                     }
                 });
         }
+})();
+// 分区图
+(function () {
+    var height=width=600;
+    var color=d3.schemeCategory20;
+    d3.json('/data/city.json',function (error,data) {
+        var partition=d3.partition().size([width,height]);
+        var data_root=partition(d3.hierarchy(data).sum(function (d) {
+            //这里比较tricky 如果普通返回1 则会造成图中有空隙的情况
+            //那么只需要叶子节点有值就行了 省和国家的值不要计算进去
+            //和前面的打包图不一样
+            return d.children?0:1;
+        }));
+        console.log(data_root.descendants())
+        var g=d3.select('div.partition')
+                .append('svg')
+                .attr('width',width)
+                .attr('height',height)
+                .append('g')
+        g.selectAll('g')
+            .data(data_root.descendants())
+            .enter()
+            .append('g')
+            .append('rect')
+            .attr('x',function (d) {
+                return d.x0;
+            })
+            .attr('y',function (d) {
+                return d.y0;
+            })
+            .attr('width',function (d) {
+                return d.x1-d.x0;
+            })
+            .attr('height',function (d) {
+                return d.y1-d.y0;
+            })
+            .style('fill',function (d,i) {
+                if(d.children){
+                    d.color=color[i];
+                    return d.color;
+                }
+                else{
+                    d.color=d.parent.color;
+                    return d.color;
+                }
+            })
+            .style('stroke','#fff')
+            .style('stroke-width',2)
+            .on('')
+        g.selectAll('g')//为了和矩形一起放到单位g内 防止文字溢出重叠
+            .append('text')
+            .text(function (d) {
+                return d.data.name;
+            })
+            .attr('x',function (d) {
+                return d.x0;
+            })
+            .attr('y',function (d) {
+                return d.y0;
+            })
+            .attr('dy',20)
+            .style('font-size',12)
+            .style('font-family','微软雅黑')
+    })
 })();
 </script>
