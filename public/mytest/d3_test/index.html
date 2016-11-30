@@ -73,8 +73,16 @@
 <div class="div pack">
     <p>打包图</p>
 </div>
-<script src="../../../lib/jQuery.min.js"></script>
-<script src="../../../lib/d3.js"></script>
+
+<div class="div line">
+    
+</div>
+
+<div class="div force-img">
+    <p>力学图+人物图片</p>
+</div>
+<script src="/lib/jQuery.min.js"></script>
+<script src="/lib/d3.js"></script>
 <script>
 // 补间动画
 (function () {
@@ -90,7 +98,7 @@
         }
     })
 })();
-// 数据排序展示树状图
+// 数据排序展示柱状图
 (function () {
     var data=[3,1,53,56,67,8]
     var svg=d3.select('div.gardenDiv').append('svg').attr('width' , '417px' ).style('background-color','grey')
@@ -301,23 +309,25 @@
     var edges = [ { source : 0 , target: 1 } , { source : 0 , target: 2 } ,
                { source : 0 , target: 3 } , { source : 1 , target: 4 } ,
                { source : 1 , target: 5 } , { source : 1 , target: 6 } ]
-    var simulation  = d3.forceSimulation()
-                .force("link", d3.forceLink().id(function(d) { return d.name; }).distance(90))
+
+    var simulation=d3.forceSimulation(nodes)
+                .force("link",d3.forceLink(edges).distance(90))
                 .force("charge", d3.forceManyBody())
-                // .force("center", d3.forceCenter(width / 2, height / 2));
+                .on("tick", ticked);
     var color=d3.schemeCategory10;
-    var svg=d3.select('div.force').append('svg').attr("width",width).attr("height",height).append('g')
-        .attr("transform", "translate(" + width/2 + "," + height/2 + ")");;
-    simulation.nodes(nodes).on("tick", ticked);
-    simulation.force("link").links(edges);
-    // console.log(nodes);
-    // console.log(edges);
+    var svg=d3.select('div.force')
+            .append('svg')
+            .attr("width",width)
+            .attr("height",height)
+            .append('g')
+            .attr("transform", "translate(" + width/2 + "," + height/2 + ")");
+
     var svg_edges=svg.selectAll('line')
                     .data(edges)
                     .enter()
                     .append('line')
                     .style("stroke","#ccc")
-                    .style("stroke-width",7);
+                    .style("stroke-width",1);
     var svg_nodes=svg.selectAll('circle')
                     .data(nodes)
                     .enter()
@@ -342,20 +352,18 @@
         .attr("cy", function(d) { return d.y; });
   }
     function dragstarted(d) {
-          if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-          d.fx = d.x;
-          d.fy = d.y;
+        simulation.alphaTarget(0.3).restart();
+        d3.select(this).style('stroke','grey')
+            .style('stroke-width',5)
     }
 
     function dragged(d) {
-      d.fx = d3.event.x;
-      d.fy = d3.event.y;
+      d.x = d3.event.x;
+      d.y = d3.event.y;
     }
 
     function dragended(d) {
-      if (!d3.event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
+        d3.select(this).style('stroke-width',0)
     }
 })();
 // 弦图
@@ -495,14 +503,13 @@
     var pack=d3.pack().size([width,height]);
     var svg=d3.select('div.pack').append('svg').attr('width',width).attr('height',height);
     var g=svg.append('g')
-    d3.json("../../../data/city2.json", function(error, root){
+    d3.json("/data/city2.json", function(error, root){
         //API里说明:在这种有权重的图的情况下 必须先调用sum()之后再生成带参数的layout
         pack=pack(d3.hierarchy(root,function (d) {
             return d.kid;//可以自己设置子节点 因此可以适应任何复杂的数据结构
         }).sum(function (d) {
             return d.size;
         }));
-        console.log(pack.descendants())
         var g_circle_text=g.selectAll('g')
             .data(pack.descendants())
             .enter()
@@ -525,5 +532,131 @@
 
     })
 })();
+// 读取csv文件
+(function () {
+    d3.csv("/data/winLostMatrix_2015.csv",function (error,data) {
+        console.log('读取csv文件:')
+        console.log(data)
+    })
+})();
+//力学图+人物图片
+(function () {
+    var width = 600;
+    var height = 600;
+    var img_w = 77;
+    var img_h = 90;
+    var svg=d3.select('div.force-img')
+                .append('svg')
+                .attr("width",width)
+                .attr("height",height);
 
+    d3.json('/data/xianjian/relation.json',function (error,data) {
+        var nodes=data.nodes;
+        var edges=data.edges;
+        console.log(nodes)
+        console.log(edges)
+        var simulation=d3.forceSimulation(nodes)
+                        .force('link',d3.forceLink(edges).distance(200))
+                        .force("charge",d3.forceManyBody().strength(-200))
+                        .on('tick',ticked);
+        var g=svg.append('g')
+        // 在限定了图片坐标范围之后 下面这一句就会导致布局出错
+        // .attr("transform", "translate(" + width/2 + "," + height/2 + ")");
+
+        var svg_relation=g.selectAll('text.edge')
+            .data(edges)
+            .enter()
+            .append('text')
+            .text(function (d) {
+                return d.relation;
+            })
+            .style('font',"12px SimSun")
+            .style('fill','blue')
+            .style('fill-opacity',0)
+        var svg_nodes=g.selectAll('image')
+            .data(nodes)
+            .enter()
+            .append('image')
+            .attr('width',img_w)
+            .attr('height',img_h)
+            .attr('xlink:href',function (d) {
+                return "/data/xianjian/"+d.image;
+            })
+            .on('mouseover',function (d) {
+                svg_relation.style('fill-opacity',function (edge) {
+                    if(edge.source==d||edge.target==d){
+                        return 1;
+                    }
+                    else{
+                        return 0
+                    }
+                })
+            })
+            .on('mouseout',function (d) {
+                svg_relation.style('fill-opacity',function () {
+                    return 0
+                })
+            })
+            .call(d3.drag()
+                .on('start',start)
+                .on('drag',dragging)
+                .on('end',end))
+        var svg_edges=g.selectAll('line')
+            .data(edges)
+            .enter()
+            .append('line')
+            .style("stroke","#ccc")
+            .style("stroke-width",1);
+        var svg_text=g.selectAll('text.node')
+            .data(nodes)
+            .enter()
+            .append('text')
+            .style('font',"12px SimSun")
+            .style('fill','black')
+            .text(function (d) {
+                return d.name;
+            })
+            .attr('dx',-20)
+            .attr('dy',12)
+
+
+        function ticked() {
+            svg_nodes.attr("x", function(d) { 
+                d.x = d.x - img_w/2 < 0     ? img_w/2 : d.x ;
+                d.x = d.x + img_w/2 > width ? width - img_w/2 : d.x ;
+                return  d.x - img_w/2; 
+            })
+                .attr("y", function(d) { 
+                    d.y = d.y - img_h/2 < 0      ? img_h/2 : d.y ;
+                    d.y = d.y + img_h/2 +12> height ? height - img_h/2-12 : d.y ;
+                    return d.y - img_h/2; 
+                });
+
+            svg_edges.attr("x1",function(d){ return d.source.x; });
+            svg_edges.attr("y1",function(d){ return d.source.y; });
+            svg_edges.attr("x2",function(d){ return d.target.x; });
+            svg_edges.attr("y2",function(d){ return d.target.y; });
+
+            svg_text.attr('x',function (d) {return d.x})
+                    .attr('y',function (d) {return d.y+img_h/2})
+
+            svg_relation.attr('x',function (d) {
+                return (d.source.x+d.target.x)/2;
+            })
+            .attr('y',function (d) {
+                return (d.source.y+d.target.y)/2;
+            })
+        }
+        function start(d) {
+            simulation.alphaTarget(0.3).restart();
+        }
+        function dragging(d) {
+            d.x=d3.event.x;
+            d.y=d3.event.y;
+        }
+        function end(d) {
+            
+        }
+    });
+})();
 </script>
