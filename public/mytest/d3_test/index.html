@@ -81,6 +81,10 @@
 <div class="div force-img">
     <p>力学图+人物图片</p>
 </div>
+
+<div class="div circledrag">
+    
+</div>
 <script src="/lib/jQuery.min.js"></script>
 <script src="/lib/d3.js"></script>
 <script>
@@ -553,8 +557,8 @@
     d3.json('/data/xianjian/relation.json',function (error,data) {
         var nodes=data.nodes;
         var edges=data.edges;
-        console.log(nodes)
-        console.log(edges)
+        // console.log(nodes)
+        // console.log(edges)
         var simulation=d3.forceSimulation(nodes)
                         .force('link',d3.forceLink(edges).distance(200))
                         .force("charge",d3.forceManyBody().strength(-200))
@@ -596,6 +600,9 @@
                 svg_relation.style('fill-opacity',function () {
                     return 0
                 })
+            })
+            .on('dblclick',function (d) {//设置为双击解锁固定坐标
+                d.fx=d.fy=null;
             })
             .call(d3.drag()
                 .on('start',start)
@@ -651,12 +658,100 @@
             simulation.alphaTarget(0.3).restart();
         }
         function dragging(d) {
-            d.x=d3.event.x;
-            d.y=d3.event.y;
+            d.fx=d3.event.x;
+            d.fy=d3.event.y;
         }
         function end(d) {
             
         }
     });
+})();
+// 拖拽小圆圈
+(function () {
+    var height=width=500;
+    var data=[];
+    var color = d3.schemeCategory20;
+    for(var i=0;i<20;i++){
+        let x=Math.random()*500;
+        let y=Math.random()*500;
+        data.push({
+            'cx':x,
+            'cy':y,
+        })
+    }
+    d3.select('div.circledrag').append('svg')
+        .attr('height',height)
+        .attr('width',width)
+        .selectAll('circle')
+        .data(data)
+        .enter()
+        .append('circle')
+        .attr('cx',function (d) {
+            return d.cx
+        })
+        .attr('cy',function (d) {
+            return d.cy
+        })
+        .attr('r',15)
+        .style('fill',function (d,i) {
+            return color[i];
+        })
+        .call(d3.drag()
+            .on('start',start)
+            .on('drag',drag)
+            .on('end',end))
+    var text=d3.select('div.circledrag svg')
+                .selectAll('text')
+                .data(data)
+                .enter()
+                .append('text')
+        function start(d) {
+            d3.select(this)
+                .attr('r',30);
+            text.text(function (d_text) {
+                    if(d==d_text){
+                        return d.cx.toFixed(2)+','+d.cy.toFixed(2);
+                    }
+                })
+                .attr('y',function (d) {
+                    return d.cy+30+12;
+                })
+                .attr('x',function (d) {
+                    return d.cx;
+                })
+                .style('font-size','12')
+
+        }
+        function drag(d) {
+            d3.select(this)
+                .attr('cx',function (d) {
+                    d.cx=d3.event.x;
+                    return d.cx;
+                })
+                .attr('cy',function (d) {
+                    d.cy=d3.event.y;
+                    return d.cy;
+                })
+            text.text(function (d_text) {
+                    if(d==d_text){
+                        return d.cx.toFixed(2)+','+d.cy.toFixed(2);
+                    }
+                })
+                .attr('y',function (d) {
+                    return d.cy+30+12;
+                })
+                .attr('x',function (d) {
+                    return d.cx;
+                });
+        }
+        function end(d) {
+            d3.select(this)
+                .attr('r',15);
+            text.text(function (d_text) {
+                    if(d==d_text){
+                        return '';
+                    }
+                });
+        }
 })();
 </script>
