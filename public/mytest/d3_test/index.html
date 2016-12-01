@@ -859,13 +859,11 @@
                     return d.length;
                 })])
                 .range([gHeight,0]);
-    console.log(histogram);
     var rect=g.selectAll('rect')
                 .data(histogram)
                 .enter()
                 .append('rect')
                 .attr('x',function (d) {
-                    console.log(x(d.x0))
                     return x(d.x0)+1;
                 })
                 .attr('y',function (d) {
