@@ -8,7 +8,8 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "server":"node index.js",
+    "node-buffer":"node public/mytest/node_test/node-buffer.js"
   },
   "repository": {
     "type": "git",
