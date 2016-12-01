@@ -97,6 +97,10 @@
 <div class="div zoom">
     <p>调节滚轮缩放</p>
 </div>
+
+<div class="div pie-drag">
+    <p>饼状图拖拽</p>
+</div>
 <script src="/lib/jQuery.min.js"></script>
 <script src="/lib/d3.js"></script>
 <script>
@@ -880,10 +884,10 @@
                 .attr('fill','steelblue')
 })();
 // 缩放
+// 需要应用来深入学习
 (function () {
     var height=width=300;
     var zoom=d3.zoom().on("zoom",zoomed)
-    console.log(zoom.extent())
     var circle=d3.select('div.zoom')
                 .append('svg')
                 .attr('width',width)
@@ -902,5 +906,54 @@
         d3.select(this)
             .attr('transform',"translate(" + d3.event.transform.x+','+d3.event.transform.y + ")scale(" + d3.event.transform.k + ")")
     }
-})()
+})();
+// 饼状图拖拽
+(function () {
+    var dataset = [ 30 , 10 , 43 , 55 , 13 ];
+    var height=width=400;
+    var pie = d3.pie()(dataset);
+    var outerRadius = 150; //外半径
+    var innerRadius = 100; //内半径，为0则中间没有空白
+    var arc = d3.arc()  //弧生成器
+        .innerRadius(innerRadius)   //设置内半径
+        .outerRadius(outerRadius);  //设置外半径
+    var color = d3.schemeCategory10;
+    var svg=d3.select("div.pie-drag").append('svg').attr('height',height).attr('width',width)
+
+    var arcs = svg.selectAll("g")
+        .data(pie)
+        .enter()
+        .append("g")
+        .attr("transform","translate("+ (width/2) +","+ (height/2) +")")
+        .each(function(d){
+            //指定当前区域的平移量
+            d.dx = width/2;
+            d.dy = height/2;
+        })
+    arcs.append("path")
+        .attr("fill",function(d,i){
+            return color[i];
+        })
+        .attr("d",function(d){
+            return arc(d);   //调用弧生成器，得到路径值
+        });
+    
+    arcs.append("text")
+        .attr("transform",function(d){
+            return "translate(" + arc.centroid(d) + ")";
+        })
+        .attr("text-anchor","middle")
+        .text(function(d){
+            return d.data;
+        });
+    // 这里比较tricky 因为整个弧为g单元 包括了text和arc 并且在数据里没有相关的位置坐标
+    // 因此必须在一开始调用each()方法初始化偏移量 通过drag事件中的偏移量dx和dy来实现改变位
+    arcs.call(d3.drag()
+        .on('drag',function (d) {
+            d.dx+=d3.event.dx;
+            d.dy+=d3.event.dy;
+            d3.select(this)
+                .attr('transform',"translate("+d.dx+","+d.dy+")")
+        }))
+})();
 </script>
