@@ -89,6 +89,10 @@
 <div class="div partition">
     <p>分区图</p>
 </div>
+
+<div class="div histogram ">
+    <p>直方图</p>
+</div>
 <script src="/lib/jQuery.min.js"></script>
 <script src="/lib/d3.js"></script>
 <script>
@@ -771,7 +775,6 @@
             //和前面的打包图不一样
             return d.children?0:1;
         }));
-        console.log(data_root.descendants())
         var g=d3.select('div.partition')
                 .append('svg')
                 .attr('width',width)
@@ -822,5 +825,55 @@
             .style('font-size',12)
             .style('font-family','微软雅黑')
     })
+})();
+// 直方图
+(function () {
+    var height=width=600;
+    var data=[];
+    var random=d3.randomUniform(0,100);
+    for(i=0;i<100;i++){
+        data.push(random());
+    }
+    var margin={top:20,bottom:20,left:20,right:20};
+    var gWidth=width-margin.left-margin.right;
+    var gHeight=height-margin.top-margin.bottom;
+    var g=d3.select('div.histogram')
+            .append('svg')
+            .attr('width',width)
+            .attr('height',height)
+            .append('g')
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
+    var x=d3.scaleLinear()
+                .domain([0,99])
+                .rangeRound([0, gWidth])
+    //注意d3中函数调用的顺序，不能使用下面的语句，因为传入data后就会实例化，没有相应的各种配置函数了
+    //var histogram=d3.histogram()(data).thresholds(20);
+    var histogram=d3.histogram()
+                    // .domain(x.domain())
+                    // .thresholds(20)
+                    (data);
+    var y=d3.scaleLinear()
+                .domain([0,d3.max(histogram,function (d) {
+                    return d.length;
+                })])
+                .range([gHeight,0]);
+    console.log(histogram);
+    var rect=g.selectAll('rect')
+                .data(histogram)
+                .enter()
+                .append('rect')
+                .attr('x',function (d) {
+                    console.log(x(d.x0))
+                    return x(d.x0)+1;
+                })
+                .attr('y',function (d) {
+                    return y(d.length)
+                })
+                .attr('width', x(histogram[0].x1) - x(histogram[0].x0)-1)
+                .attr('height',function (d) {
+                    return gHeight-y(d.length);
+                })
+                .attr('fill','steelblue')
 })();
 </script>
