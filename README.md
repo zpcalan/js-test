@@ -28,4 +28,12 @@ zpc个人的各种js测试文档
 ####12月2日：
     node_test:
     明确Buffer和TypedArray的关系，大端小端在16位数据时的高低位置，需要后面在应用中逐渐深入。
-    
+    Buffer.alloc(size, fill)和Buffer.allocUnsafe(size).fill(fill)的区别：后者是在Buffer池内直接选择，在性能要求较高的情况下，后者方法比较常用。
+####12月3日：
+    node_test:
+    明确了Buffer的几个构造函数，通过new Buffer()构造实例的方法已经被废弃。
+    要注意：在Buffer实例中的任何字符都会转换为若干个16进制数，因此访问Buffer实例时，获得的都是16进制数。
+    明确Buffer的比较方法，前后顺序的规定。
+    在看了几天的API后，感觉一些底层的东西应用中接触不多，而且很繁琐，因此决定先看一些重要且常用的模块，如事件模块，HTTP模块等等，而那些偏向底层或者不常用的模块如Buffer，console等，暂时先搁置一下了。
+
+
