@@ -9,7 +9,11 @@
   "devDependencies": {},
   "scripts": {
     "server":"node index.js",
-    "node-buffer":"node public/mytest/node_test/node-buffer.js"
+
+    "node-buffer":"node public/my_demo_test/node_api/node-buffer.js",
+    
+    "node_lesson1":"node public/my_demo_test/node_demo/lesson1/app.js",
+    "node_lesson2":"node public/my_demo_test/node_demo/lesson2/app.js"
   },
   "repository": {
     "type": "git",
